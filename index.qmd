@@ -58,7 +58,7 @@ Hint: The `prettify()` function in the R package `jsonlite` will spit out a bett
 
 ```{r}
 
-head(prettify(readLines("drwho-210.json")))
+  prettify(readLines("drwho-210.json")))
 
 ```
 
