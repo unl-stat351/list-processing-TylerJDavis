@@ -105,7 +105,7 @@ Remember that if you link to an image, you must link to something with a picture
 
 ------------------------------------------------------------------------
 
-Sketch goes here
+![Sketch for tidy data formation](images/351%20hw%202%20-%20page%201.png)
 
 ------------------------------------------------------------------------
 
@@ -114,9 +114,11 @@ Make an ordered list of steps you need to take.
 
 ------------------------------------------------------------------------
 
-1.  ... fill me in
-2.  ...
-3.  ...
+1.  read in json as a date frame with fromJson
+2.  create a series variable and check for duplicates
+3.  row bind the three data frames
+4.  select columns need for show analysis
+5.  un nest the rating variable
 
 ## Implement Your Strategy
 
@@ -165,10 +167,50 @@ total_date <- total_show_info %>%
     filter(!is.na(date_diff))
 library(ggplot2)
 
-ggplot(total_date,aes(x = factor(season),y = factor(date_diff))) + geom_bar(position = "dodge", stat = "identity") + facet_grid(~factor(series))
+total_date %>%
+    filter(series ==1 & season ==1) %>%
+    ggplot(aes(x = number,y = factor(date_diff),group = factor(series),color = factor(date_diff))) + geom_point() + geom_line() + labs(
+        title = "Date Difference in Episodes in season 1 of series 1",
+        x = "episode number",
+        y = "days between episodes",
+        color = "difference in days of episode relase"
+    )
 
-ggplot(total_date,aes(x = date,y = factor(date_diff), group = series)) + geom_point() + geom_line() + facet_grid(~factor(series))
+total_date %>%
+    filter(series ==1) %>%
+    ggplot(aes(x = factor(season),y = factor(date_diff),fill = factor(date_diff))) + geom_bar(position = "dodge",stat = "identity") + labs(
+        title = "Occurances of Date Difference in Episodes in Series 1",
+        x = "season",
+        y = "days between episodes",
+        fill = "episode relase difference"
+    )
 
+total_date %>%
+    filter(series ==2) %>%
+    ggplot(aes(x = factor(season),y = factor(date_diff),fill = factor(date_diff))) + geom_bar(position = "dodge",stat = "identity") + labs(
+        title = "Occurances of Date Difference in Episodes in Series 2",
+        x = "season",
+        y = "days between episodes",
+        fill = "episode relase difference"
+    )
+
+total_date %>%
+    filter(series ==3) %>%
+    ggplot(aes(x = factor(season),y = factor(date_diff),fill = factor(date_diff))) + geom_bar(position = "dodge",stat = "identity") + labs(
+        title = "Occurances of Date Difference in Episodes in Series 3",
+        x = "season",
+        y = "days between episodes",
+        fill = "episode relase difference"
+    )
+
+
+total_date %>%
+    ggplot(aes(x = factor(season),y = factor(date_diff),fill = factor(date_diff))) + geom_bar(position = "dodge",stat = "identity") + facet_grid(~series) + labs(
+        title = "Occurances of Date Difference in Episodes Across Series",
+        x = "season",
+        y = "days between episodes",
+        fill = "episode relase difference"
+    )
 
 ```
 
@@ -177,6 +219,10 @@ ggplot(total_date,aes(x = date,y = factor(date_diff), group = series)) + geom_po
 In 2-3 sentences, explain what conclusions you might draw from the data.
 What patterns do you notice?
 Are there data quality issues?
+
+I can conclude that most of the episodes are released in a weekly pattern across all series with few exceptions.
+One of the episodes was released 182 days after the previous episode in series 2 season 7.
+There could be a data quality issue there.
 
 # Timey-Wimey Series and Episodes
 
@@ -193,6 +239,7 @@ Use a functional programming approach to read in all of the files and bind them 
 time_1 <- fromJSON("torchwood-659.json")
 time_2 <- fromJSON("torchwood-26694.json")
 files <- list.files(pattern = "\\.json$", recursive = TRUE)
+series_form <- data.frame(files)
 
 read_timey <- function(x){
     library(jsonlite)
@@ -227,13 +274,13 @@ clean_combined <- combined_show %>%
     unnest(cols = c(rating,image,`_links`)) 
 new_clean <- clean_combined %>%
     unnest(cols = c(show,self), names_sep = "_")
-final_clean <- new_clean %>%
+whoverse <- new_clean %>%
     rowwise %>%
     mutate(summ_clean =  gsub("<.*?>", "", summary)) %>%
     select(-summary)
     
-str(new_clean)
-head(new_clean,5)
+str(whoverse)
+head(whoverse,5)
 ```
 
 ------------------------------------------------------------------------
@@ -249,22 +296,28 @@ How can you explain any shows in the Dr. Who universe which do not have airtimes
 
 ```{r}
 
-airtime <- new_clean %>%
+airtime <- whoverse %>%
     group_by(series, season) %>%
     summarise(uniq_airtimes = n_distinct(airtime),airtime,airdate,runtime,average,number)
 
 library(ggplot2)
 
-ggplot(airtime, aes(x = factor(season), y = factor(uniq_airtimes), fill = factor(series))) + geom_bar(position = "dodge", stat = "identity")
-ggplot(airtime, aes(x = factor(season), y = factor(uniq_airtimes))) +  geom_bar(position = "dodge", stat = "identity")+ facet_grid(~series)
-ggplot(airtime,aes(x = airtime)) + geom_histogram(stat = "count")
-
 diff_air <- airtime %>%
     group_by(series) %>%
     count(airtime) %>%
-    ggplot(aes(x = factor(airtime), y = n, fill = factor(series))) + geom_bar(position = "dodge", stat = "identity")
+    ggplot(aes(x = factor(airtime), y = n, fill = factor(series))) + geom_bar(position = "dodge", stat = "identity") + labs(
+        title = "Count of airtimes for each series",
+        x = "airtime",
+        y = "count",
+        fill = "series"
+    )
 diff_air
 ```
+
+It can clearly be show that the air time for the thee main Dr. Who series (1 - 3) are the prime time slot.
+The Sarah Jane show is exclusively at 5:15 and the more inappropriate series (6) is shown in the watershed window.
+This all makes sense with the information that we know about each show!
+We also see that we have series 5 which has no airtime, this is due to the fact that this was a special series and had a longer run time.
 
 ## Another Layer of JSON
 
@@ -293,18 +346,13 @@ head(episode_data,5)
 
 ------------------------------------------------------------------------
 
-Process the JSON files using a functional approach and construct an appropriate table for the combined data you've acquired during this step (no need to join the data with the full `whoverse` episode-level data).
-
-------------------------------------------------------------------------
-
-Process JSON files to make a table here
-
-------------------------------------------------------------------------
-
 What keys would you use to join this data with the `whoverse` episode level data?
 Explain.
 
-> Explanation
+> The keys that I would use to combine this with the who verse data would be series wide information.
+> This is because this data is for each series as a whole.
+> What we could do is give each of the series a new id based on the ids for the episode data.
+> We then can use this id to join the who verse data and the episode data.
 
 ## Explore!
 
@@ -318,7 +366,7 @@ Or, look at the episode guest cast by appending `/guestcast/` to the episode URL
 
 ------------------------------------------------------------------------
 
-Exploring series and season data
+I would like to look deeper into series and season information and if anything interesting can be parsed out.
 
 ------------------------------------------------------------------------
 
@@ -326,38 +374,71 @@ Code goes here -- once you output a result, you should explain it using markdown
 
 ```{r}
 
-season_series <- final_clean %>%
+season_series <- whoverse %>%
     group_by(series,season) %>%
-    summarise(avg_rating = round(mean(average),2), num_epi = unique(n()), types = list(unique(type)), avg_runtime = round(mean(runtime),2),show_name = first(show_name),date = first(airdate))
+    summarise(avg_rating = round(mean(average),2), num_epi = unique(n()), types = list(unique(type)), avg_runtime = round(mean(runtime),2),show_name = first(show_name),date = first(airdate)) 
+```
 
-
+```{r}
 season_dat <- season_series %>%
     mutate(date = as.Date(date,format = "%Y-%m-%d")) %>%
     group_by(series) %>%
-    ggplot(aes(x = season, y = avg_rating, color = factor(series)))+ geom_point() + geom_line() + ylim(0,10)
+    ggplot(aes(x = season, y = avg_rating, color = factor(series)))+ geom_point() + geom_line() + ylim(0,10) + labs(
+        title = "Average rating across seasons",
+        x = "season",
+        y = "average rating",
+        color = "Series"
+    )
 season_dat
-
 
 season_date <- season_series %>%
     mutate(date = as.Date(date,format = "%Y-%m-%d")) %>%
     group_by(series) %>%
-    ggplot(aes(x = date, y = avg_rating, color = factor(series)))+ geom_point() + geom_line() + ylim(0,10)
+    ggplot(aes(x = date, y = avg_rating, color = factor(series)))+ geom_point() + geom_line() + ylim(0,10) + labs(
+        title = "Average rating across date",
+        x = "season",
+        y = "average rating",
+        fill = "series"
+    )
 season_date
+```
 
-
-season_rating <- final_clean %>%
+```{r}
+season_rating <- whoverse %>%
     filter(season == 1) %>%
-    ggplot(aes(x = number, y = average, color = factor(series))) + geom_point() + geom_line()
+    ggplot(aes(x = number, y = average, color = factor(series))) + geom_point() + geom_line() + labs(
+        title = "Average rating across season 1",
+        x = "episode",
+        y = "average rating",
+        fill = "series"
+    )
 season_rating
+```
 
+giyv
 
-first_time <- final_clean %>%
+```{r}
+first_time <- whoverse %>%
     filter(series == 6) %>%
     mutate(airdates = as.Date(airdate,format = "%Y-%m-%d")) %>%
-    ggplot(aes(x = airdates,y = average, color = factor(season), group = season)) +geom_point() + geom_line() + ylim(0,9)
+    ggplot(aes(x = airdates,y = average, color = factor(season), group = season)) +geom_point() + geom_line() + ylim(0,9) + labs(
+        title = "Average rating across series 6 (Timey_whimy)",
+        x = "date",
+        y = "average rating",
+        fill = "season"
+    )
 first_time
-
-
-episode_data %>%
-    ggplot(aes(x = as.numeric(averageRuntime), y = as.numeric(rating.average))) + geom_point() + geom_line() + ylim(0,10)
 ```
+
+khyulv
+
+```{r}
+episode_data %>%
+    ggplot(aes(x = as.numeric(averageRuntime), y = as.numeric(rating.average))) + geom_point() + geom_line() + ylim(0,10) + labs(
+        title = "Average runtime vs average rating across series",
+        x = "average runtime",
+        y = "average rating"
+    )
+```
+
+fhxykc
