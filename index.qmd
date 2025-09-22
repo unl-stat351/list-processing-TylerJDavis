@@ -57,8 +57,8 @@ Make sure you use proper markdown formatting to ensure that the lists are render
 Hint: The `prettify()` function in the R package `jsonlite` will spit out a better-formatted version of a JSON file.
 
 ```{r}
-
-  prettify(readLines("drwho-210.json")))
+#| eval: FALSE
+cat(head(prettify(readLines("drwho-210.json"))),10)
 
 ```
 
@@ -131,7 +131,6 @@ Print out the first 5 rows of each table that you create (but no more)!
 library(jsonlite)
 library(tidyverse)
 dat_1963 <- fromJSON("drwho-766.json")
-row.names(dat_1963)
 dat_1963$series <- 1
 sum(duplicated(dat_1963$id))
 dat_2005 <- fromJSON("drwho-210.json")
@@ -404,10 +403,13 @@ season_date <- season_series %>%
 season_date
 ```
 
+Both of these graphs show similar information in which comparing the average rating across date and season.
+I think from these graphs we can reason that we have a fairly consistent rating for all of these series, but the best ratings overall belong to series 3 which is the 1963 Dr. Who Show.
+
 ```{r}
 season_rating <- whoverse %>%
     filter(season == 1) %>%
-    ggplot(aes(x = number, y = average, color = factor(series))) + geom_point() + geom_line() + labs(
+    ggplot(aes(x = number, y = average, color = factor(series))) + geom_point() + geom_line() +  ylim(0,10) +labs(
         title = "Average rating across season 1",
         x = "episode",
         y = "average rating",
@@ -416,7 +418,9 @@ season_rating <- whoverse %>%
 season_rating
 ```
 
-giyv
+In the graph above we have average rating for each episode in season 1 across all series.
+It can be seen that the major outline in this case is the timey whimey (touchwood) special series or series 5.
+This series has much lower rating for season 1 than the rest of the who verse.
 
 ```{r}
 first_time <- whoverse %>%
@@ -426,20 +430,24 @@ first_time <- whoverse %>%
         title = "Average rating across series 6 (Timey_whimy)",
         x = "date",
         y = "average rating",
-        fill = "season"
+        color = "season"
     )
 first_time
+
 ```
 
-khyulv
+Here we have the ratings for each episode of the the touchwood timey whimey show across all 4 seasons and over date.
+This allows us to see that overall the ratings are very similar for each season of this show which hovers around a 7.5, with season 3 being the highest rating.
 
 ```{r}
 episode_data %>%
-    ggplot(aes(x = as.numeric(averageRuntime), y = as.numeric(rating.average))) + geom_point() + geom_line() + ylim(0,10) + labs(
+  
+  ggplot(aes(x = as.numeric(averageRuntime), y = as.numeric(rating.average), )) + geom_point() + geom_line() + ylim(0,10) + labs(
         title = "Average runtime vs average rating across series",
         x = "average runtime",
         y = "average rating"
     )
 ```
 
-fhxykc
+In the graph above it is comparing the average run time for each series vs the average rating.
+This allows us to see that we don't really have a relationship in the average run time and rating, especially because they all have very similar ratings with the lowest being series 5 or the touchwood speical.
